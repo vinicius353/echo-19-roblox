@@ -1,5 +1,9 @@
 name: ECHO-19 - Publicacao manual
 on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/publish.yml'
   workflow_dispatch:
     inputs:
       version_type:
@@ -37,7 +41,7 @@ jobs:
       - name: Publicar ou salvar pela Open Cloud
         env:
           ROBLOX_API_KEY: ${{ secrets.ROBLOX_API_KEY }}
-          VERSION_TYPE: ${{ inputs.version_type }}
+          VERSION_TYPE: ${{ inputs.version_type || 'Saved' }}
         run: |
           set -euo pipefail
           test -n "$ROBLOX_API_KEY" || { echo "Secret ROBLOX_API_KEY ausente"; exit 1; }
