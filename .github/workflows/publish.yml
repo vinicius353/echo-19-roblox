@@ -1,0 +1,49 @@
+name: ECHO-19 - Publicacao manual
+on:
+  workflow_dispatch:
+    inputs:
+      version_type:
+        description: 'Saved (rascunho) ou Published (jogavel)'
+        type: choice
+        required: true
+        default: 'Saved'
+        options:
+          - Saved
+          - Published
+
+permissions:
+  contents: read
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      UNIVERSE_ID: '3569802459'
+      PLACE_ID: '9591561150'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Instalar Rojo
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail-with-body --location --retry 3 --output rojo.zip https://github.com/rojo-rbx/rojo/releases/download/v7.7.1/rojo-7.7.1-linux-x86_64.zip
+          mkdir -p .rojo-cli
+          unzip -oq rojo.zip -d .rojo-cli
+          chmod +x .rojo-cli/rojo
+      - name: Compilar
+        run: .rojo-cli/rojo build default.project.json -o ECHO19.rbxlx
+      - name: Publicar ou salvar pela Open Cloud
+        env:
+          ROBLOX_API_KEY: ${{ secrets.ROBLOX_API_KEY }}
+          VERSION_TYPE: ${{ inputs.version_type }}
+        run: |
+          set -euo pipefail
+          test -n "$ROBLOX_API_KEY" || { echo "Secret ROBLOX_API_KEY ausente"; exit 1; }
+          test -s ECHO19.rbxlx
+          curl --fail-with-body --retry 2 --silent --show-error --request POST \
+            --url "https://apis.roblox.com/universes/v1/${UNIVERSE_ID}/places/${PLACE_ID}/versions?versionType=${VERSION_TYPE}" \
+            --header "x-api-key: ${ROBLOX_API_KEY}" \
+            --header 'Content-Type: application/xml' \
+            --data-binary @ECHO19.rbxlx

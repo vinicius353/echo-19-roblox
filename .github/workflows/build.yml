@@ -1,0 +1,33 @@
+name: ECHO-19 - Verificar build
+on:
+  push:
+    paths:
+      - 'src/**'
+      - 'default.project.json'
+      - '.github/workflows/build.yml'
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'default.project.json'
+      - '.github/workflows/build.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Instalar Rojo
+        run: |
+          curl --fail-with-body --location --retry 3 --output rojo.zip https://github.com/rojo-rbx/rojo/releases/download/v7.7.1/rojo-7.7.1-linux-x86_64.zip
+          mkdir -p .rojo-cli
+          unzip -oq rojo.zip -d .rojo-cli
+          chmod +x .rojo-cli/rojo
+      - name: Verificar compilacao
+        run: |
+          .rojo-cli/rojo build default.project.json -o ECHO19.rbxlx
+          test -s ECHO19.rbxlx
